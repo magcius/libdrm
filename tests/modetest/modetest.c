@@ -113,6 +113,10 @@ struct device {
 };
 
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
+static inline int64_t U642I64(uint64_t val)
+{
+	return (int64_t)*((int64_t *)&val);
+}
 
 struct type_name {
 	int type;
@@ -293,6 +297,8 @@ static void dump_prop(struct device *dev, drmModePropertyPtr prop,
 	printf("\t\tflags:");
 	if (prop->flags & DRM_MODE_PROP_PENDING)
 		printf(" pending");
+	if (prop->flags & DRM_MODE_PROP_SIGNED)
+		printf(" signed");
 	if (prop->flags & DRM_MODE_PROP_RANGE)
 		printf(" range");
 	if (prop->flags & DRM_MODE_PROP_IMMUTABLE)
@@ -303,12 +309,19 @@ static void dump_prop(struct device *dev, drmModePropertyPtr prop,
 		printf(" bitmask");
 	if (prop->flags & DRM_MODE_PROP_BLOB)
 		printf(" blob");
+	if (prop->flags & DRM_MODE_PROP_OBJECT)
+		printf(" object");
 	printf("\n");
 
 	if (prop->flags & DRM_MODE_PROP_RANGE) {
 		printf("\t\tvalues:");
-		for (i = 0; i < prop->count_values; i++)
-			printf(" %"PRIu64, prop->values[i]);
+		if (prop->flags & DRM_MODE_PROP_SIGNED) {
+			for (i = 0; i < prop->count_values; i++)
+				printf(" %"PRId64, U642I64(prop->values[i]));
+		} else {
+			for (i = 0; i < prop->count_values; i++)
+				printf(" %"PRIu64, prop->values[i]);
+		}
 		printf("\n");
 	}
 

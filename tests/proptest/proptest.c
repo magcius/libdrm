@@ -36,6 +36,10 @@
 #include "xf86drmMode.h"
 
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
+static inline int64_t U642I64(uint64_t val)
+{
+	return (int64_t)*((int64_t *)&val);
+}
 
 int fd;
 drmModeResPtr res = NULL;
@@ -87,8 +91,10 @@ dump_blob(uint32_t blob_id)
 	drmModePropertyBlobPtr blob;
 
 	blob = drmModeGetPropertyBlob(fd, blob_id);
-	if (!blob)
+	if (!blob) {
+		printf("\n");
 		return;
+	}
 
 	blob_data = blob->data;
 
@@ -121,20 +127,31 @@ dump_prop(uint32_t prop_id, uint64_t value)
 	printf("\t\tflags:");
 	if (prop->flags & DRM_MODE_PROP_PENDING)
 		printf(" pending");
+	if (prop->flags & DRM_MODE_PROP_SIGNED)
+		printf(" signed");
 	if (prop->flags & DRM_MODE_PROP_RANGE)
 		printf(" range");
 	if (prop->flags & DRM_MODE_PROP_IMMUTABLE)
 		printf(" immutable");
 	if (prop->flags & DRM_MODE_PROP_ENUM)
 		printf(" enum");
+	if (prop->flags & DRM_MODE_PROP_BITMASK)
+		printf(" bitmask");
 	if (prop->flags & DRM_MODE_PROP_BLOB)
 		printf(" blob");
+	if (prop->flags & DRM_MODE_PROP_OBJECT)
+		printf(" object");
 	printf("\n");
 
 	if (prop->flags & DRM_MODE_PROP_RANGE) {
 		printf("\t\tvalues:");
-		for (i = 0; i < prop->count_values; i++)
-			printf(" %"PRIu64, prop->values[i]);
+		if (prop->flags & DRM_MODE_PROP_SIGNED) {
+			for (i = 0; i < prop->count_values; i++)
+				printf(" %"PRId64, U642I64(prop->values[i]));
+		} else {
+			for (i = 0; i < prop->count_values; i++)
+				printf(" %"PRIu64, prop->values[i]);
+		}
 		printf("\n");
 	}
 
