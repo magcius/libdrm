@@ -78,27 +78,25 @@ struct cursor_step {
 
 static uint32_t indx, count;
 
+static void set_cursor_enabled(struct cursor *cursor, int enabled)
+{
+	uint32_t handle = 0;
+	if (enabled)
+		handle = cursor->bo_handle;
+	drmModeSetCursor(cursor->fd, cursor->crtc_id, handle, cursor->w, cursor->h);
+	cursor->enabled = enabled;
+}
+
 static void set_cursor(struct cursor *cursor, struct cursor_step *step)
 {
 	int enabled = (step->arg ^ count) & 0x1;
-	uint32_t handle = 0;
-
-	if (enabled)
-		handle = cursor->bo_handle;
-
-	cursor->enabled = enabled;
-
-	drmModeSetCursor(cursor->fd, cursor->crtc_id, handle, cursor->w, cursor->h);
+	set_cursor_enabled(cursor, enabled);
 }
 
 static void move_cursor(struct cursor *cursor, struct cursor_step *step)
 {
 	int x = cursor->x;
 	int y = cursor->y;
-
-	if (!cursor->enabled)
-		drmModeSetCursor(cursor->fd, cursor->crtc_id,
-				cursor->bo_handle, cursor->w, cursor->h);
 
 	/* calculate new cursor position: */
 	x += cursor->dx * step->arg;
@@ -142,6 +140,15 @@ static struct cursor_step steps[] = {
 	{  set_cursor, 10,   0,  0 },  /* disable */
 };
 
+static void run_step(struct cursor *cursor, struct cursor_step *step, int is_last)
+{
+	step->run(cursor, step);
+
+	/* Force the cursor back on after an disable/enable loop. */
+	if (is_last && !cursor->enabled)
+		set_cursor_enabled(cursor, 1);
+}
+
 static void *cursor_thread_func(void *data)
 {
 	while (cursor_running) {
@@ -150,7 +157,7 @@ static void *cursor_thread_func(void *data)
 
 		for (i = 0; i < ncursors; i++) {
 			struct cursor *cursor = &cursors[i];
-			step->run(cursor, step);
+			run_step(cursor, step, (count >= step->repeat));
 		}
 
 		/* iterate to next count/step: */
