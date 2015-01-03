@@ -127,19 +127,19 @@ static void move_cursor(struct cursor *cursor, struct cursor_step *step)
 }
 
 static struct cursor_step steps[] = {
-		{  set_cursor, 10,   0,  1 },  /* enable */
-		{ move_cursor,  1, 100,  1 },
-		{ move_cursor,  1,  10, 10 },
-		{  set_cursor,  1, 100,  0 },  /* disable/enable loop */
-		{ move_cursor,  1,  10, 10 },
-		{ move_cursor,  9, 100,  1 },
-		{ move_cursor, 11, 100,  5 },
-		{  set_cursor, 17,  10,  0 },  /* disable/enable loop */
-		{ move_cursor,  9, 100,  1 },
-		{  set_cursor, 13,  10,  0 },  /* disable/enable loop */
-		{ move_cursor,  9, 100,  1 },
-		{  set_cursor, 13,  10,  0 },  /* disable/enable loop */
-		{  set_cursor, 10,   0,  0 },  /* disable */
+	{  set_cursor, 10,   0,  1 },  /* enable */
+	{ move_cursor,  1, 100,  1 },
+	{ move_cursor,  1,  10, 10 },
+	{  set_cursor,  1, 100,  0 },  /* disable/enable loop */
+	{ move_cursor,  1,  10, 10 },
+	{ move_cursor,  9, 100,  1 },
+	{ move_cursor, 11, 100,  5 },
+	{  set_cursor, 17,  10,  0 },  /* disable/enable loop */
+	{ move_cursor,  9, 100,  1 },
+	{  set_cursor, 13,  10,  0 },  /* disable/enable loop */
+	{ move_cursor,  9, 100,  1 },
+	{  set_cursor, 13,  10,  0 },  /* disable/enable loop */
+	{  set_cursor, 10,   0,  0 },  /* disable */
 };
 
 static void *cursor_thread_func(void *data)
