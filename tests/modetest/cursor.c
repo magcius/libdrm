@@ -47,13 +47,13 @@
 
 struct cursor {
 	int fd;
-	uint32_t bo_handle;
+	uint32_t bo_handles[2];
 	uint32_t crtc_id;
 	uint32_t crtc_w, crtc_h;
 	uint32_t w, h;
 
 	/* current state */
-	uint32_t enabled, x, y;
+	uint32_t enabled, current, x, y;
 	int32_t dx, dy;
 };
 
@@ -82,7 +82,7 @@ static void set_cursor_enabled(struct cursor *cursor, int enabled)
 {
 	uint32_t handle = 0;
 	if (enabled)
-		handle = cursor->bo_handle;
+		handle = cursor->bo_handles[cursor->current];
 	drmModeSetCursor(cursor->fd, cursor->crtc_id, handle, cursor->w, cursor->h);
 	cursor->enabled = enabled;
 }
@@ -91,6 +91,12 @@ static void set_cursor(struct cursor *cursor, struct cursor_step *step)
 {
 	int enabled = (step->arg ^ count) & 0x1;
 	set_cursor_enabled(cursor, enabled);
+}
+
+static void set_image(struct cursor *cursor, struct cursor_step *step)
+{
+	cursor->current = step->arg;
+	set_cursor_enabled(cursor, cursor->enabled);
 }
 
 static void move_cursor(struct cursor *cursor, struct cursor_step *step)
@@ -125,10 +131,14 @@ static void move_cursor(struct cursor *cursor, struct cursor_step *step)
 }
 
 static struct cursor_step steps[] = {
+	{  set_cursor, 99,   0,  1 },  /* pause for 99ms */
+	{   set_image, 99,   0,  0 },  /* first image */
 	{  set_cursor, 10,   0,  1 },  /* enable */
 	{ move_cursor,  1, 100,  1 },
 	{ move_cursor,  1,  10, 10 },
 	{  set_cursor,  1, 100,  0 },  /* disable/enable loop */
+	{  set_cursor, 99,   0,  1 },  /* pause for 99ms */
+	{   set_image, 99,   0,  1 },  /* second image */
 	{ move_cursor,  1,  10, 10 },
 	{ move_cursor,  9, 100,  1 },
 	{ move_cursor, 11, 100,  5 },
@@ -174,7 +184,7 @@ static void *cursor_thread_func(void *data)
 	return NULL;
 }
 
-int cursor_init(int fd, uint32_t bo_handle, uint32_t crtc_id,
+int cursor_init(int fd, uint32_t bo_handle0, uint32_t bo_handle1, uint32_t crtc_id,
 		uint32_t crtc_w, uint32_t crtc_h, uint32_t w, uint32_t h)
 {
 	struct cursor *cursor = &cursors[ncursors];
@@ -182,7 +192,8 @@ int cursor_init(int fd, uint32_t bo_handle, uint32_t crtc_id,
 	assert(ncursors < MAX_CURSORS);
 
 	cursor->fd = fd;
-	cursor->bo_handle = bo_handle;
+	cursor->bo_handles[0] = bo_handle0;
+	cursor->bo_handles[1] = bo_handle1;
 	cursor->crtc_id = crtc_id;
 	cursor->crtc_w = crtc_w;
 	cursor->crtc_h = crtc_h;

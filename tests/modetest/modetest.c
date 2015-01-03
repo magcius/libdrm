@@ -1128,8 +1128,8 @@ static void set_planes(struct device *dev, struct plane_arg *p, unsigned int cou
 
 static void set_cursors(struct device *dev, struct pipe_arg *pipes, unsigned int count)
 {
-	uint32_t handles[4], pitches[4], offsets[4] = {0}; /* we only use [0] */
-	struct kms_bo *bo;
+	uint32_t handles[4][2], pitches[4][2], offsets[4][2]; /* we only use [0] */
+	struct kms_bo *bo[2];
 	unsigned int i;
 	int ret;
 
@@ -1140,14 +1140,18 @@ static void set_cursors(struct device *dev, struct pipe_arg *pipes, unsigned int
 	/* create cursor bo.. just using PATTERN_PLAIN as it has
 	 * translucent alpha
 	 */
-	bo = create_test_buffer(dev->kms, DRM_FORMAT_ARGB8888,
-			cw, ch, handles, pitches, offsets, PATTERN_PLAIN);
-	if (bo == NULL)
+	bo[0] = create_test_buffer(dev->kms, DRM_FORMAT_ARGB8888,
+				   cw, ch, handles[0], pitches[0], offsets[0], PATTERN_PLAIN);
+	if (bo[0] == NULL)
+		return;
+	bo[1] = create_test_buffer(dev->kms, DRM_FORMAT_ARGB8888,
+				   cw, ch, handles[1], pitches[1], offsets[1], PATTERN_TILES);
+	if (bo[1] == NULL)
 		return;
 
 	for (i = 0; i < count; i++) {
 		struct pipe_arg *pipe = &pipes[i];
-		ret = cursor_init(dev->fd, handles[0],
+		ret = cursor_init(dev->fd, handles[0][0], handles[1][0],
 				pipe->crtc->crtc->crtc_id,
 				pipe->mode->hdisplay, pipe->mode->vdisplay,
 				cw, ch);

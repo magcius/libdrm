@@ -25,7 +25,7 @@
 #ifndef __CURSOR_H__
 #define __CURSOR_H__
 
-int cursor_init(int fd, uint32_t bo_handle, uint32_t crtc_id,
+int cursor_init(int fd, uint32_t bo_handle0, uint32_t bo_handle1, uint32_t crtc_id,
 		uint32_t crtc_w, uint32_t crtc_h, uint32_t w, uint32_t h);
 int cursor_start(void);
 int cursor_stop(void);
